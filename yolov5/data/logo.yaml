@@ -1,0 +1,18 @@
+# logo dataset by Zehan Li
+# Train command: python train.py --data logo.yaml
+# Default dataset location is next to YOLOv5:
+#   /parent
+#     /datasets/logo
+#     /yolov5
+
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: ../datasets/logo  # dataset root dir
+train: images/train  # train images (relative to 'path')
+val: images/train  # val images (relative to 'path')
+test:  # test images (optional)
+
+# Classes
+nc: 10 # number of classes
+names: [ 'circle', 'ellipse', 'triangle', 'square', 'cross', 
+         'plus', 'hexagon', 'rhombus', 'inverse triangle', 'unk']  # class names
