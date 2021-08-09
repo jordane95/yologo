@@ -9,3 +9,9 @@ def get_center_point(box):
 def get_distance(a, b):
     '''calculate the l2 distance between point a and b'''
     return (a[0]-b[0])**2+(a[1]-b[1])**2
+
+def xy_in_xywh(point, box):
+    '''whether point in box'''
+    x0, y0 = point
+    x, y, w, h = box
+    return x0 >= x-w/2 and x0 <= x+w/2 and y0 >= y-h/2 and y0 <= y+h/2

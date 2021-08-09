@@ -1,7 +1,7 @@
 from paddleocr import PaddleOCR
-import torch
 import cv2 as cv
-from functions import get_center_point, get_distance
+import torch
+from functions import get_center_point, get_distance, xy_in_xywh
 
 
 class TextEncoder:
@@ -46,21 +46,25 @@ class LogoEncoder:
         self.model = torch.hub.load('yolov5', 'custom', path=weight_path, source='local')
         pass
 
-    @staticmethod
-    def _get_distance(a, b):
-        '''calculate the l2 distance between point a and b'''
-        return (a[0]-b[0])**2+(a[1]-b[1])**2
-
     def encode(self, img_path='images/africa.jpg', text_center=[359.75, 215.0]):
         img = cv.imread(img_path)[..., ::-1] # to fit RGB convention in yolo
         result = self.model(img)
         result.save()
-        logo_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
-        distances = [get_distance(text_center, logo_center) for logo_center in logo_centers]
+        logo_box_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
+        distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers]
         nearest_index = min(range(len(distances)), key=distances.__getitem__)
-        nearest_logo_id = int(result.pred[0][nearest_index][5])
-        nearest_logo_name = result.names[nearest_logo_id]
-        print(nearest_logo_name)
+        nearest_logo_box = result.xywh[0][nearest_index]
+        nearest_logo_name_id = int(result.pred[0][nearest_index][5])
+        nearest_logo_name = result.names[nearest_logo_name_id]
+        relevant_logos = []
+        for id in range(len(logo_box_centers)):
+            if xy_in_xywh(logo_box_centers[id], nearest_logo_box[:4]):
+                relevant_logos.append(id)
+        for logo_id in relevant_logos:
+            logo_name_id = int(result.pred[0][logo_id][5])
+            print(result.names[logo_name_id])
+        return relevant_logos
+
 
 
 if __name__ == "__main__":
