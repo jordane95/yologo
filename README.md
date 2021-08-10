@@ -1,3 +1,10 @@
+## Requirement
+
+* paddlepaddle
+* paddleocr
+* opencv
+* pytorch
+
 ## Usage
 
 1. environment setup
