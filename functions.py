@@ -16,7 +16,7 @@ def xy_in_xywh(point, box):
     x, y, w, h = box
     return x0 >= x-w/2 and x0 <= x+w/2 and y0 >= y-h/2 and y0 <= y+h/2
 
-def get_back_box(boxes):
+def get_xyxy_from_box(boxes):
     '''get the bounding box of all boxes'''
     x_min, x_max, y_min, y_max = float('inf'), float('-inf'), float('inf'), float('-inf')
     for box in boxes:
@@ -25,7 +25,7 @@ def get_back_box(boxes):
             if point[0]>x_max: x_max = point[0]
             if point[1]<y_min: y_min = point[1]
             if point[1]>y_max: y_max = point[1]
-    return x_min, x_max, y_min, y_max
+    return x_min, y_min, x_max, y_max
 
 def get_bound_xyxy(xyxys):
     x_min, x_max, y_min, y_max = float('inf'), float('-inf'), float('inf'), float('-inf')
@@ -34,5 +34,5 @@ def get_bound_xyxy(xyxys):
         y_min = xyxy[1] if xyxy[1]<y_min else y_min
         x_max = xyxy[2] if xyxy[2]>x_max else x_max
         y_max = xyxy[3] if xyxy[3]>y_max else y_max
-    return x_min, x_max, y_min, y_max
-    
+    return x_min, y_min, x_max, y_max
+

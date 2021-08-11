@@ -47,16 +47,6 @@ class ShapeEncoder:
         self.model = torch.hub.load('yolov5', 'custom', path=weight_path, source='local')
         pass
 
-    def square(self, box, size) -> str:
-        pass
-
-    def triangle(self, box) -> str:
-        pass
-
-    def plus(self, box) -> str:
-        pass
-
-
     def get_relevant_shape(self, img_path='images/africa.jpg', text_center=[359.75, 215.0]):
         img = cv.imread(img_path)[..., ::-1] # to fit RGB convention in yolo
         result = self.model(img)
@@ -84,6 +74,41 @@ class LogoEncoder:
     def __init__(self) -> None:
         self.text_encoder = TextEncoder()
         self.shape_encoder = ShapeEncoder()
+    
+    def draw_plus(self, ascii_mat, Sx, Sy, W, H):
+        size = (W+H)//2
+        if size <= 2:
+            ascii_mat[Sy][Sx] = '+'
+        elif size == 3:
+            pass
+        else: pass
+        pass
+
+    def draw_square(self, ascii_mat, Sx, Sy, W, H):
+        for i in range(W):
+            ascii_mat[Sy][i+Sx] = "-"
+            ascii_mat[Sy+H][i+Sx] = "-"
+        for j in range(H):
+            ascii_mat[Sy+j][Sx] = "|"
+            ascii_mat[Sy+j][Sx+W] = "|"
+        pass
+
+    def draw_triangle(self, ascii_mat, Sx, Sy, W, H):
+        size = (W+H)//2
+        if size <= 2:
+            pass
+        elif size == 3:
+            pass
+        elif size == 4:
+            pass
+        pass
+
+    def draw_circle(self, ascii_mat, Sx, Sy, W, H):
+        size = (W+H)//2
+        if size <= 2:
+            ascii_mat[Sy][Sx] = "O"
+        elif size == 3:
+            pass
 
     def encode_text(self, src='images/africa.jpg', tar='results/africa.txt'):
         self.text_encoder.encode(img_path=src, save_path=tar)
@@ -93,7 +118,7 @@ class LogoEncoder:
         '''get text info'''
         text, text_shape, text_box = self.text_encoder.get_nearest_text(img_path=src)
         '''get shape info'''
-        relevant_shapes = self.shape_encoder.encode(img_path=src, text_center=get_center_point(text_box))
+        relevant_shapes = self.shape_encoder.get_relevant_shape(img_path=src, text_center=get_center_point(text_box))
         '''get bounding box of all boxes'''
         x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box])
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
@@ -103,31 +128,76 @@ class LogoEncoder:
         y_max = max(y_max_t, y_max_s)
         Nx = math.ceil((x_max-x_min)/text_shape[0])
         Ny = math.ceil((y_max-y_min)/text_shape[1])
-        ascii_mat = [' '*Nx for _ in range(Ny)]
-        '''draw text in ascii_mat'''
-        Tx = math.ceil((x_min_t-x_min)/text_shape[0])
-        Ty = math.ceil((y_min_t-y_min)/text_shape[1])
-        ascii_mat[Tx][Ty] = text
+        print(f"Nx: {Nx}, Ny:{Ny}")
+        ascii_mat = [[' ' for __ in range(Nx)] for _ in range(Ny)]
+        ## note: shape rander first, then text
+        
         '''draw shape'''
-        Sx = math.ceil((x_min_s-x_min)/text_shape[0])
-        Sy = math.ceil((y_min_s-y_min)/text_shape[1])
-        ascii_mat[Sx][Sy] = "shape"
+        '''
+        # plus
+        Sx = math.floor((relevant_shapes[0]['xyxy'][0]-x_min)/text_shape[0])
+        Sy = math.floor((relevant_shapes[0]['xyxy'][1]-y_min)/text_shape[1])
+        print(f"Sx:{Sx}, Sy:{Sy}")
+        self.draw_plus(ascii_mat, 1, Sx, Sy)
+        # square
+        Sx = math.floor((relevant_shapes[1]['xyxy'][0]-x_min)/text_shape[0])
+        Sy = math.floor((relevant_shapes[1]['xyxy'][1]-y_min)/text_shape[1])
+        print(f"Sx:{Sx}, Sy:{Sy}")
+        ascii_mat[Sy][Sx:] = ["-"]*Nx
+        ascii_mat[Sy:][Sx] = ["|"]*Ny
+        ascii_mat[-1][Sx:] = ["-"]*Nx
+        ascii_mat[Sy:][-1] = ['|']*Ny
+        '''
+
+        for shape in relevant_shapes:
+            x1, y1, x2, y2 = shape['xyxy']
+            name = shape['name']
+            W = math.floor((x2-x1)/text_shape[0])
+            H = math.floor((y2-y1)/text_shape[1])
+            Sx = math.floor((x1-x_min)/text_shape[0])
+            Sy = math.floor((y1-y_min)/text_shape[1])
+            print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}")
+            if name == 'plus':
+                self.draw_plus(ascii_mat, Sx, Sy, W, H)
+            elif name == 'square':
+                self.draw_square(ascii_mat, Sx, Sy, W, H)
+            elif name == 'triangle':
+                self.draw_triangle(ascii_mat, Sx, Sy, W, H)
+            elif name == "circle":
+                self.draw_circle(ascii_mat, Sx, Sy, W, H)
+            else: pass
+
+        
+        '''draw text in ascii_mat'''
+        ## only support text in one line
+        Tx = math.ceil((x_min_t-x_min)/text_shape[0])
+        Ty = math.ceil(((y_max_t+y_min_t)/2-y_min)/text_shape[1])
+        print(f"Text starting point: Tx:{Tx}, Ty:{Ty}")
+        ascii_mat[Ty][Tx:(Tx+len(text))] = list(text)
+        
+
         '''flatten two dimensional ascii array'''
         res = ""
         for line in ascii_mat:
-            res += line
-            res += "\n"
-        with open(tar, 'w', encoding='utf-8'):
-            tar.write(res)
+            res += " "
+            for c in line:
+                res += c
+            res += " \n"
+        with open(tar, 'w', encoding='utf-8') as f:
+            f.write(res)
         print("Logo ASCII Art sucessfully saved at ", tar)
         return res
 
 
 if __name__ == "__main__":
     path = 'images/africa.jpg'
-    encoder = TextEncoder()
-    print(encoder.encode(img_path=path, save_path='results/africa.txt'))
-    # print(get_nearest_text())
+    # encoder = TextEncoder()
+    # print(encoder.encode(img_path=path, save_path='results/africa.txt'))
+    # # print(get_nearest_text())
 
-    encoder = ShapeEncoder()
-    encoder.get_relevant_shape(img_path=path, text_center=[359.75, 215.0])
+    # encoder = ShapeEncoder()
+    # encoder.get_relevant_shape(img_path=path, text_center=[359.75, 215.0])
+
+    encoder = LogoEncoder()
+    encoder.encode_logo(src='images/africa.jpg', tar='results/africa_logo.txt')
+
