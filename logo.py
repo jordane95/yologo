@@ -95,11 +95,15 @@ class LogoEncoder:
 
     def draw_triangle(self, ascii_mat, Sx, Sy, W, H):
         size = (W+H)//2
-        if size <= 2:
-            pass
-        elif size == 3:
-            pass
-        elif size == 4:
+        if size <= 1:
+            ascii_mat[Sy][Sx] = "^"
+        elif size <=4:
+            for i in range(3):
+                ascii_mat[Sy+i][Sx+2-i] = "/"
+            for i in range(3):
+                ascii_mat[Sy+i][Sx+3+i] = "\\"
+            ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+4] = "_"
+        else:
             pass
         pass
 
@@ -126,8 +130,8 @@ class LogoEncoder:
         y_min = min(y_min_t, y_min_s)
         x_max = max(x_max_t, x_max_s)
         y_max = max(y_max_t, y_max_s)
-        Nx = math.ceil((x_max-x_min)/text_shape[0])
-        Ny = math.ceil((y_max-y_min)/text_shape[1])
+        Nx = math.ceil((x_max-x_min)/text_shape[0])+1
+        Ny = math.ceil((y_max-y_min)/text_shape[1])+1
         print(f"Nx: {Nx}, Ny:{Ny}")
         ascii_mat = [[' ' for __ in range(Nx)] for _ in range(Ny)]
         ## note: shape rander first, then text
@@ -156,7 +160,7 @@ class LogoEncoder:
             H = math.floor((y2-y1)/text_shape[1])
             Sx = math.floor((x1-x_min)/text_shape[0])
             Sy = math.floor((y1-y_min)/text_shape[1])
-            print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}")
+            print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
             if name == 'plus':
                 self.draw_plus(ascii_mat, Sx, Sy, W, H)
             elif name == 'square':
@@ -190,7 +194,8 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    path = 'images/africa.jpg'
+    read_path = 'images/input.jpg'
+    save_path = 'results/input_logo.txt'
     # encoder = TextEncoder()
     # print(encoder.encode(img_path=path, save_path='results/africa.txt'))
     # # print(get_nearest_text())
@@ -199,5 +204,5 @@ if __name__ == "__main__":
     # encoder.get_relevant_shape(img_path=path, text_center=[359.75, 215.0])
 
     encoder = LogoEncoder()
-    encoder.encode_logo(src='images/africa.jpg', tar='results/africa_logo.txt')
+    encoder.encode_logo(src=read_path, tar=save_path)
 
