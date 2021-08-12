@@ -194,8 +194,9 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/input.jpg'
-    save_path = 'results/input_logo.txt'
+    read_path = 'images/square.jpeg'
+    save_path = 'results/square_logo.txt'
+    save_text = 'results/square.txt'
     # encoder = TextEncoder()
     # print(encoder.encode(img_path=path, save_path='results/africa.txt'))
     # # print(get_nearest_text())
@@ -204,5 +205,5 @@ if __name__ == "__main__":
     # encoder.get_relevant_shape(img_path=path, text_center=[359.75, 215.0])
 
     encoder = LogoEncoder()
+    encoder.encode_text(src=read_path, tar=save_text)
     encoder.encode_logo(src=read_path, tar=save_path)
-
