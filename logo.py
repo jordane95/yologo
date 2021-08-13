@@ -1,4 +1,4 @@
-from paddleocr import PaddleOCR
+from paddleocr import PaddleOCR, draw_ocr
 import cv2 as cv
 import torch
 import math
@@ -16,8 +16,13 @@ class TextEncoder:
         height = (abs(box[0][1]-box[3][1]) + abs(box[1][1]-box[2][1]))/2
         width = (abs(box[1][0]-box[0][0]) + abs(box[2][0]-box[3][0]))/(2*text_len)
         return width, height
+    
+    def _get_box_area(self, box):
+        height = (abs(box[0][1]-box[3][1]) + abs(box[1][1]-box[2][1]))/2
+        width = (abs(box[1][0]-box[0][0]) + abs(box[2][0]-box[3][0]))/2
+        return width*height
 
-    def get_nearest_text(self, img_path='images/africa.jpg'):
+    def get_nearest_text(self, img_path='images/africa.jpg', show=True):
         '''get the nearest text w.r.t the center of the image'''
         ocr = PaddleOCR(lang='en')
         result = ocr.ocr(img_path)
@@ -27,12 +32,18 @@ class TextEncoder:
         texts = [line[1][0] for line in result]
         box_centers = [get_center_point(box) for box in boxes]
         distances = [get_distance(box_center, img_center) for box_center in box_centers]
-        nearest_index = min(range(len(distances)), key=distances.__getitem__)
+        areas = [self._get_box_area(box) for box in boxes]
+        nearest_index = max(range(len(distances)), key=areas.__getitem__)
         nearest_text = texts[nearest_index]
         nearest_box = boxes[nearest_index]
         text_shape = self._get_text_size(nearest_box, len(nearest_text))
         print("nearest box center:", box_centers[nearest_index])
         text_box = boxes[nearest_index]
+        if show:
+            from PIL import Image
+            im_show = draw_ocr(image, boxes)
+            im_show = Image.fromarray(im_show)
+            im_show.save('images/ocr_result.jpg')
         return nearest_text, text_shape, text_box
 
     def encode(self, img_path='images/africa.jpg', save_path='results/text.txt'):
@@ -85,12 +96,16 @@ class LogoEncoder:
         pass
 
     def draw_square(self, ascii_mat, Sx, Sy, W, H):
-        for i in range(W):
-            ascii_mat[Sy][i+Sx] = "-"
-            ascii_mat[Sy+H][i+Sx] = "-"
-        for j in range(H):
-            ascii_mat[Sy+j][Sx] = "|"
-            ascii_mat[Sy+j][Sx+W] = "|"
+        size = (W+H)//2
+        if size <= 2:
+            ascii_mat[Sy][Sx:Sx+3] = ['[', '_', ']']
+        else:
+            for i in range(W):
+                ascii_mat[Sy][i+Sx] = "-"
+                ascii_mat[Sy+H][i+Sx] = "-"
+            for j in range(H):
+                ascii_mat[Sy+j][Sx] = "|"
+                ascii_mat[Sy+j][Sx+W] = "|"
         pass
 
     def draw_triangle(self, ascii_mat, Sx, Sy, W, H):
@@ -134,32 +149,17 @@ class LogoEncoder:
         Ny = math.ceil((y_max-y_min)/text_shape[1])+1
         print(f"Nx: {Nx}, Ny:{Ny}")
         ascii_mat = [[' ' for __ in range(Nx)] for _ in range(Ny)]
+
         ## note: shape rander first, then text
         
         '''draw shape'''
-        '''
-        # plus
-        Sx = math.floor((relevant_shapes[0]['xyxy'][0]-x_min)/text_shape[0])
-        Sy = math.floor((relevant_shapes[0]['xyxy'][1]-y_min)/text_shape[1])
-        print(f"Sx:{Sx}, Sy:{Sy}")
-        self.draw_plus(ascii_mat, 1, Sx, Sy)
-        # square
-        Sx = math.floor((relevant_shapes[1]['xyxy'][0]-x_min)/text_shape[0])
-        Sy = math.floor((relevant_shapes[1]['xyxy'][1]-y_min)/text_shape[1])
-        print(f"Sx:{Sx}, Sy:{Sy}")
-        ascii_mat[Sy][Sx:] = ["-"]*Nx
-        ascii_mat[Sy:][Sx] = ["|"]*Ny
-        ascii_mat[-1][Sx:] = ["-"]*Nx
-        ascii_mat[Sy:][-1] = ['|']*Ny
-        '''
-
         for shape in relevant_shapes:
             x1, y1, x2, y2 = shape['xyxy']
             name = shape['name']
             W = math.floor((x2-x1)/text_shape[0])
             H = math.floor((y2-y1)/text_shape[1])
-            Sx = math.floor((x1-x_min)/text_shape[0])
-            Sy = math.floor((y1-y_min)/text_shape[1])
+            Sx = math.ceil((x1-x_min)/text_shape[0])
+            Sy = math.ceil((y1-y_min)/text_shape[1])
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
             if name == 'plus':
                 self.draw_plus(ascii_mat, Sx, Sy, W, H)
@@ -194,15 +194,9 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/square.jpeg'
-    save_path = 'results/square_logo.txt'
-    save_text = 'results/square.txt'
-    # encoder = TextEncoder()
-    # print(encoder.encode(img_path=path, save_path='results/africa.txt'))
-    # # print(get_nearest_text())
-
-    # encoder = ShapeEncoder()
-    # encoder.get_relevant_shape(img_path=path, text_center=[359.75, 215.0])
+    read_path = 'images/plus.jpeg'
+    save_path = 'results/plus_logo.txt'
+    save_text = 'results/plus_text.txt'
 
     encoder = LogoEncoder()
     encoder.encode_text(src=read_path, tar=save_text)
