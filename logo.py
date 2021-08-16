@@ -126,7 +126,10 @@ class LogoEncoder:
         size = (W+H)//2
         if size <= 2:
             ascii_mat[Sy][Sx] = "O"
-        elif size == 3:
+        elif size >= 3:
+            ascii_mat[Sy:(Sy+3)][Sx:(Sx+5)] = [[' ', 'o', ' ', 'o', ' '],
+                                               ['o', ' ', ' ', ' ', 'o'],
+                                               [' ', 'o', ' ', 'o', '']]
             pass
 
     def encode_text(self, src='images/africa.jpg', tar='results/africa.txt'):
@@ -194,9 +197,9 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/plus.jpeg'
-    save_path = 'results/plus_logo.txt'
-    save_text = 'results/plus_text.txt'
+    read_path = 'images/square.jpeg'
+    save_path = 'results/square_logo.txt'
+    save_text = 'results/square_text.txt'
 
     encoder = LogoEncoder()
     encoder.encode_text(src=read_path, tar=save_text)
