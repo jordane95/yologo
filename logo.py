@@ -127,6 +127,7 @@ class LogoEncoder:
         if size <= 2:
             ascii_mat[Sy][Sx] = "O"
         elif size >= 3:
+            print("You are at circle of size >= 3")
             ascii_mat[Sy:(Sy+3)][Sx:(Sx+5)] = [[' ', 'o', ' ', 'o', ' '],
                                                ['o', ' ', ' ', ' ', 'o'],
                                                [' ', 'o', ' ', 'o', '']]
@@ -197,10 +198,16 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/square.jpeg'
-    save_path = 'results/square_logo.txt'
-    save_text = 'results/square_text.txt'
+    import argparse
+    import sys
+    read_path = 'images/africa.jpg'
+    save_path = 'results/test_logo.txt'
+    save_text = 'results/test_text.txt'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--source', type=str, default='images/circle.jpeg', help='file/dir/URL/glob, 0 for webcam')
 
+    args = parser.parse_args()
+    read_path = args.source
     encoder = LogoEncoder()
     encoder.encode_text(src=read_path, tar=save_text)
     encoder.encode_logo(src=read_path, tar=save_path)
