@@ -22,12 +22,11 @@ class TextEncoder:
         width = (abs(box[1][0]-box[0][0]) + abs(box[2][0]-box[3][0]))/2
         return width*height
 
-    def get_nearest_text(self, img_path='images/africa.jpg', show=True):
+    def get_nearest_text(self, img, show=False):
         '''get the nearest text w.r.t the center of the image'''
         ocr = PaddleOCR(lang='en')
-        result = ocr.ocr(img_path)
-        image = cv.imread(img_path)
-        img_center = [image.shape[0]/2, image.shape[1]/2]
+        result = ocr.ocr(img)
+        img_center = [img.shape[0]/2, img.shape[1]/2]
         boxes = [line[0] for line in result]
         texts = [line[1][0] for line in result]
         box_centers = [get_center_point(box) for box in boxes]
@@ -41,16 +40,10 @@ class TextEncoder:
         text_box = boxes[nearest_index]
         if show:
             from PIL import Image
-            im_show = draw_ocr(image, boxes)
+            im_show = draw_ocr(img, boxes)
             im_show = Image.fromarray(im_show)
             im_show.save('images/ocr_result.jpg')
         return nearest_text, text_shape, text_box
-
-    def encode(self, img_path='images/africa.jpg', save_path='results/text.txt'):
-        text, _, __ = self.get_nearest_text(img_path)
-        with open(save_path, 'w', encoding='utf-8') as f:
-            f.write(text)
-        print(f'The encoding file saved sucessfully at {save_path} !')
 
 
 class ShapeEncoder:
@@ -58,8 +51,8 @@ class ShapeEncoder:
         self.model = torch.hub.load('yolov5', 'custom', path=weight_path, source='local')
         pass
 
-    def get_relevant_shape(self, img_path='images/africa.jpg', text_center=[359.75, 215.0]):
-        img = cv.imread(img_path)[..., ::-1] # to fit RGB convention in yolo
+    def get_relevant_shape(self, img, text_center=[359.75, 215.0]):
+        img = img[..., ::-1] # to fit RGB convention in yolo
         result = self.model(img)
         result.save()
         logo_box_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
@@ -133,15 +126,17 @@ class LogoEncoder:
                                                [' ', 'o', ' ', 'o', '']]
             pass
 
-    def encode_text(self, src='images/africa.jpg', tar='results/africa.txt'):
-        self.text_encoder.encode(img_path=src, save_path=tar)
-        pass
+    def encode_text(self, img, save_path='results/text.txt'):
+        text, _, __ = self.text_encoder.get_nearest_text(img)
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write(text)
+        print(f'The encoding file saved sucessfully at {save_path} !')
 
-    def encode_logo(self, src='images/africa.jpg', tar='results/africa_logo.txt'):
+    def encode_logo(self, img, save_path='results/logo.txt'):
         '''get text info'''
-        text, text_shape, text_box = self.text_encoder.get_nearest_text(img_path=src)
+        text, text_shape, text_box = self.text_encoder.get_nearest_text(img)
         '''get shape info'''
-        relevant_shapes = self.shape_encoder.get_relevant_shape(img_path=src, text_center=get_center_point(text_box))
+        relevant_shapes = self.shape_encoder.get_relevant_shape(img, text_center=get_center_point(text_box))
         '''get bounding box of all boxes'''
         x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box])
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
@@ -191,23 +186,18 @@ class LogoEncoder:
             for c in line:
                 res += c
             res += " \n"
-        with open(tar, 'w', encoding='utf-8') as f:
+        with open(save_path, 'w', encoding='utf-8') as f:
             f.write(res)
-        print("Logo ASCII Art sucessfully saved at ", tar)
+        print("Logo ASCII Art sucessfully saved at ", save_path)
         return res
 
 
 if __name__ == "__main__":
-    import argparse
-    import sys
     read_path = 'images/africa.jpg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--source', type=str, default='images/circle.jpeg', help='file/dir/URL/glob, 0 for webcam')
+    img = cv.imread(read_path)
 
-    args = parser.parse_args()
-    read_path = args.source
     encoder = LogoEncoder()
-    encoder.encode_text(src=read_path, tar=save_text)
-    encoder.encode_logo(src=read_path, tar=save_path)
+    encoder.encode_text(img, save_path=save_text)
+    encoder.encode_logo(img, save_path=save_path)

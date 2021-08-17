@@ -1,18 +1,32 @@
-import flask, requests
+"""
+Run a rest API exposing the logo ascii art model
+"""
+import io
+
+from PIL import Image
+from flask import Flask, request
+from logo import LogoEncoder
+import numpy as np
 
 
-app = flask.Flask(__name__)
-@app.route("/predict", methods=["GET", "POST"])
+app = Flask(__name__)
+
+
+@app.route("/predict", methods=["POST"])
 def predict():
-    # Load the Input
-    data = requests.files['file'] # Image input
-    data = requests.form['form_input_id'] # String input
-    
-    # Load the model
-    model = load_model()
-    
-    # Make predictions on input data
-    model.predict(data) # .predict() could change based on libarary/framework
+    if not request.method == "POST":
+        return
 
-# Start the flask app and allow remote connections
-app.run(host='0.0.0.0', port = 80)
+    if request.files.get("image"):
+        image_file = request.files["image"]
+        image_bytes = image_file.read()
+
+        img = Image.open(io.BytesIO(image_bytes))
+
+        results = encoder.encode_text(np.asarray(img))
+        return results
+
+
+if __name__ == "__main__":
+    encoder = LogoEncoder()
+    app.run(host="0.0.0.0", port=7595)
