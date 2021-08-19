@@ -26,6 +26,7 @@ class TextEncoder:
         '''get the nearest text w.r.t the center of the image'''
         ocr = PaddleOCR(lang='en')
         result = ocr.ocr(img)
+        if result == []: return None, None, None
         img_center = [img.shape[0]/2, img.shape[1]/2]
         boxes = [line[0] for line in result]
         texts = [line[1][0] for line in result]
@@ -54,6 +55,7 @@ class ShapeEncoder:
     def get_relevant_shape(self, img, text_center=[359.75, 215.0]):
         result = self.model(img)
         result.save()
+        if [*result.xywh[0].shape][0] == 0: return []
         logo_box_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
         distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers]
         nearest_index = min(range(len(distances)), key=distances.__getitem__)
@@ -144,6 +146,7 @@ class LogoEncoder:
 
     def encode_text(self, img, save_path='results/text.txt'):
         text, _, __ = self.text_encoder.get_nearest_text(img)
+        if text == None: text = ""
         with open(save_path, 'w', encoding='utf-8') as f:
             f.write(text)
         print(f'The encoding file saved sucessfully at {save_path} !')
@@ -152,8 +155,12 @@ class LogoEncoder:
     def encode_logo(self, img, save_path='results/logo.txt'):
         '''get text info'''
         text, text_shape, text_box = self.text_encoder.get_nearest_text(img)
+        # bad case where no text is detected in the image
+        if text == None: return ""
+        # if text exist in the image, do the subsequent stuff
         '''get shape info'''
         relevant_shapes = self.shape_encoder.get_relevant_shape(img, text_center=get_center_point(text_box))
+
         '''get bounding box of all boxes'''
         x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box])
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
@@ -210,7 +217,7 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/africa.jpg'
+    read_path = 'images/zidane.jpg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)

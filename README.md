@@ -40,17 +40,25 @@ Output text
 
 ## Deployment
 
-```
-docker pull jordane95/logo
-docker run -p 7595:7595 --name logo_server logo
-```
+1. Run the docker container
+
+   ```
+   docker pull jordane95/logo:alpha
+   docker run -dp 2333:7595 --name logo_server logo
+   ```
+
+2. Use the web service on your host with curl
+
+   ```
+   curl -X POST -F image=@your_image.jpg 'http://localhost:2333'
+   ```
 
 ## Structure
 
 ```
 logo
 ├── images                                  // input images
-│   ├── input.jpg                           // H
+│   ├── input.jpg
 │   ...
 ├── predefined                              // some predefined shapes for making rule
 │   ├── plus.txt                            // PaddleOCR
