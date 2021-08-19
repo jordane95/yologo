@@ -1,9 +1,29 @@
+# logo
+
+ASCII art generation based on YOLO and PaddleOCR
+
+## Example
+
+input image
+
+![input](images/input.jpg)
+
+Output text
+
+```
+   /\              
+  /  \PSYANGILCOM  
+ /_  _\            
+
+```
+
 ## Requirement
 
 * paddlepaddle
 * paddleocr
 * opencv
 * pytorch
+* flask
 
 ## Usage
 
@@ -17,4 +37,37 @@
    ```
 
 2. run python logo.py
+
+## Deployment
+
+```
+docker pull jordane95/logo
+docker run -p 7595:7595 --name logo_server logo
+```
+
+## Structure
+
+```
+logo
+├── images                                  // input images
+│   ├── input.jpg                           // H
+│   ...
+├── predefined                              // some predefined shapes for making rule
+│   ├── plus.txt                            // PaddleOCR
+│   ...
+├── results                                 // output text
+│   ├── input_text.txt                      // only text
+│   ├── input_logo.txt                      // whole logo = shape + text
+│   ...
+├── yolov5                                  // customized yolov5 model
+│   ├── weights                             // pre-trained weights
+│   │   └── best.pt                         // pre-trained weights on logo dataset for logo detection    
+│   ...
+├── Dockerfile                              // build docker image
+├── functions.py                            // some useful functions used in logo.py
+├── logo.py                                 // core code
+├── app.py                                  // web service
+├── README.md                               // documentation
+...
+```
 

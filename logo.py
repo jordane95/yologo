@@ -123,6 +123,24 @@ class LogoEncoder:
             ascii_mat[Sy+1][Sx] = ascii_mat[Sy+1][Sx+4] = 'o'
             ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+3] = 'o'
             pass
+    
+    def draw_ellipse(self, ascii_mat, Sx, Sy, W, H):
+        pass
+
+    def draw_cross(self, ascii_mat, Sx, Sy, W, H):
+        pass
+
+    def draw_hexagon(self, ascii_mat, Sx, Sy, W, H):
+        pass
+
+    def draw_rhombus(self, ascii_mat, Sx, Sy, W, H):
+        pass
+
+    def draw_inv_triangle(self, ascii_mat, Sx, Sy, W, H):
+        pass
+
+    def draw_unk(self, ascii_mat, Sx, Sy, W, H):
+        pass
 
     def encode_text(self, img, save_path='results/text.txt'):
         text, _, __ = self.text_encoder.get_nearest_text(img)
