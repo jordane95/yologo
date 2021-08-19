@@ -52,7 +52,6 @@ class ShapeEncoder:
         pass
 
     def get_relevant_shape(self, img, text_center=[359.75, 215.0]):
-        img = img[..., ::-1] # to fit RGB convention in yolo
         result = self.model(img)
         result.save()
         logo_box_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
@@ -120,10 +119,9 @@ class LogoEncoder:
         if size <= 2:
             ascii_mat[Sy][Sx] = "O"
         elif size >= 3:
-            print("You are at circle of size >= 3")
-            ascii_mat[Sy:(Sy+3)][Sx:(Sx+5)] = [[' ', 'o', ' ', 'o', ' '],
-                                               ['o', ' ', ' ', ' ', 'o'],
-                                               [' ', 'o', ' ', 'o', '']]
+            ascii_mat[Sy][Sx+1] = ascii_mat[Sy][Sx+3] = 'o'
+            ascii_mat[Sy+1][Sx] = ascii_mat[Sy+1][Sx+4] = 'o'
+            ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+3] = 'o'
             pass
 
     def encode_text(self, img, save_path='results/text.txt'):
@@ -131,6 +129,7 @@ class LogoEncoder:
         with open(save_path, 'w', encoding='utf-8') as f:
             f.write(text)
         print(f'The encoding file saved sucessfully at {save_path} !')
+        return text
 
     def encode_logo(self, img, save_path='results/logo.txt'):
         '''get text info'''
