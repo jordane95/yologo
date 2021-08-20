@@ -26,6 +26,7 @@ class TextEncoder:
         '''get the nearest text w.r.t the center of the image'''
         ocr = PaddleOCR(lang='en')
         result = ocr.ocr(img)
+        for res in result: print(res)
         if result == []: return None, None, None
         img_center = [img.shape[0]/2, img.shape[1]/2]
         boxes = [line[0] for line in result]
@@ -56,9 +57,16 @@ class ShapeEncoder:
         result = self.model(img)
         result.save()
         if [*result.xywh[0].shape][0] == 0: return []
-        logo_box_centers = [res[:2] for res in result.xywh[0]] # all detected logo center in one image
-        distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers]
-        nearest_index = min(range(len(distances)), key=distances.__getitem__)
+        logo_box_centers = [res[:2] for res in result.xywh[0]] # center of each box
+        distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers] # dis(shape center, text center)
+        sizes = [res[2]+res[3] for res in result.xywh[0]] # size of each box
+        confs = [res[5] for res in result.xywh[0]] # confidence of each box
+        # nearest_index = min(range(len(distances)), key=distances.__getitem__)
+        scores = []
+        for i in range(len(distances)):
+            score = sizes[i]*confs[i]/distances[i]
+            scores.append(score)
+        nearest_index = max(range(len(scores)), key=scores.__getitem__)
         nearest_logo_box = result.xywh[0][nearest_index][:4]
         '''get relevant logo indexs'''
         relevant_logo_ids = []
@@ -84,7 +92,10 @@ class LogoEncoder:
         size = (W+H)//2
         if size <= 2:
             ascii_mat[Sy][Sx] = '+'
-        elif size == 3:
+        elif size <= 4:
+            ascii_mat[Sy][Sx+2] = "|"
+            ascii_mat[Sy+1][Sx:Sx+5] = ["-", "-", "+", "-", "-"]
+            ascii_mat[Sy+2][Sx+2] = "|"
             pass
         else: pass
         pass
@@ -120,11 +131,21 @@ class LogoEncoder:
         size = (W+H)//2
         if size <= 2:
             ascii_mat[Sy][Sx] = "O"
-        elif size >= 3:
+        elif size <= 4:
             ascii_mat[Sy][Sx+1] = ascii_mat[Sy][Sx+3] = 'o'
             ascii_mat[Sy+1][Sx] = ascii_mat[Sy+1][Sx+4] = 'o'
             ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+3] = 'o'
-            pass
+        else:
+            center = [Sx+round(W/2), Sy+round(H/2)]
+            Sx = center[0]-5
+            Sy = center[1]-3
+            ascii_mat[Sy][Sx+4] = ascii_mat[Sy][Sx+7] = "="
+            ascii_mat[Sy+1][Sx+1] = ascii_mat[Sy+1][Sx+10] = "="
+            ascii_mat[Sy+2][Sx] = ascii_mat[Sy+2][Sx+11] = "="
+            ascii_mat[Sy+3][Sx] = ascii_mat[Sy+3][Sx+11] = "="
+            ascii_mat[Sy+4][Sx+1] = ascii_mat[Sy+4][Sx+10] = "="
+            ascii_mat[Sy+5][Sx+4] = ascii_mat[Sy+5][Sx+7] = "="
+        pass
     
     def draw_ellipse(self, ascii_mat, Sx, Sy, W, H):
         pass
@@ -154,22 +175,22 @@ class LogoEncoder:
 
     def encode_logo(self, img, save_path='results/logo.txt'):
         '''get text info'''
-        text, text_shape, text_box = self.text_encoder.get_nearest_text(img)
+        text, text_shape, text_box = self.text_encoder.get_nearest_text(img, show=True)
         # bad case where no text is detected in the image
         if text == None: return ""
         # if text exist in the image, do the subsequent stuff
         '''get shape info'''
         relevant_shapes = self.shape_encoder.get_relevant_shape(img, text_center=get_center_point(text_box))
-
+        w, h = text_shape
         '''get bounding box of all boxes'''
         x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box])
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
-        x_min = min(x_min_t, x_min_s)
-        y_min = min(y_min_t, y_min_s)
-        x_max = max(x_max_t, x_max_s)
-        y_max = max(y_max_t, y_max_s)
-        Nx = math.ceil((x_max-x_min)/text_shape[0])+1
-        Ny = math.ceil((y_max-y_min)/text_shape[1])+1
+        x_min = min(x_min_t, x_min_s)-2*w
+        y_min = min(y_min_t, y_min_s)-2*h
+        x_max = max(x_max_t, x_max_s)+2*w
+        y_max = max(y_max_t, y_max_s)+2*h
+        Nx = math.ceil((x_max-x_min)/w)+1
+        Ny = math.ceil((y_max-y_min)/h)+1
         print(f"Nx: {Nx}, Ny:{Ny}")
         ascii_mat = [[' ' for __ in range(Nx)] for _ in range(Ny)]
 
@@ -179,10 +200,10 @@ class LogoEncoder:
         for shape in relevant_shapes:
             x1, y1, x2, y2 = shape['xyxy']
             name = shape['name']
-            W = math.floor((x2-x1)/text_shape[0])
-            H = math.floor((y2-y1)/text_shape[1])
-            Sx = math.ceil((x1-x_min)/text_shape[0])
-            Sy = math.ceil((y1-y_min)/text_shape[1])
+            W = math.floor((x2-x1)/w)
+            H = math.floor((y2-y1)/h)
+            Sx = math.floor((x1-x_min)/w)
+            Sy = math.floor((y1-y_min)/h)
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
             if name == 'plus':
                 self.draw_plus(ascii_mat, Sx, Sy, W, H)
@@ -197,8 +218,8 @@ class LogoEncoder:
         
         '''draw text in ascii_mat'''
         ## only support text in one line
-        Tx = math.ceil((x_min_t-x_min)/text_shape[0])
-        Ty = math.ceil(((y_max_t+y_min_t)/2-y_min)/text_shape[1])
+        Tx = math.ceil((x_min_t-x_min)/w)
+        Ty = math.ceil(((y_max_t+y_min_t)/2-y_min)/h)
         print(f"Text starting point: Tx:{Tx}, Ty:{Ty}")
         ascii_mat[Ty][Tx:(Tx+len(text))] = list(text)
         
@@ -217,10 +238,10 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/zidane.jpg'
+    read_path = 'images/plus.jpg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
-    img = cv.imread(read_path)
+    img = cv.imread(read_path)[:, :, ::-1]
 
     encoder = LogoEncoder()
     encoder.encode_text(img, save_path=save_text)
