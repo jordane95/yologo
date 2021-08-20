@@ -223,6 +223,17 @@ class LogoEncoder:
                 self.draw_triangle(ascii_mat, Sx, Sy, W, H)
             elif name == "circle":
                 self.draw_circle(ascii_mat, Sx, Sy, W, H)
+            elif name == "cross":
+                self.draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "ellipse":
+                self.draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "rhombus":
+                self.draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "inverse triangle":
+                self.draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "hexagon":
+                self.draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "unk": pass
             else: pass
 
         
