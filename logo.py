@@ -151,6 +151,16 @@ class LogoEncoder:
         pass
 
     def draw_cross(self, ascii_mat, Sx, Sy, W, H):
+        size = (W+H)//2
+        if size <= 2:
+            ascii_mat[Sy][Sx] = "X"
+        elif size <= 4:
+            ascii_mat[Sy][Sx] = ascii_mat[Sy+1][Sx+1] = "\\"
+            ascii_mat[Sy][Sx+1] = ascii_mat[Sy+1][Sx] = "/"
+        else:
+            ascii_mat[Sy][Sx] = ascii_mat[Sy+2][Sx+2] = "\\"
+            ascii_mat[Sy][Sx+2] = ascii_mat[Sy+2][Sx] = "/"
+            ascii_mat[Sy+1][Sx+1] = "X"
         pass
 
     def draw_hexagon(self, ascii_mat, Sx, Sy, W, H):
@@ -227,10 +237,9 @@ class LogoEncoder:
         '''flatten two dimensional ascii array'''
         res = ""
         for line in ascii_mat:
-            res += " "
             for c in line:
                 res += c
-            res += " \n"
+            res += "\n"
         with open(save_path, 'w', encoding='utf-8') as f:
             f.write(res)
         print("Logo ASCII Art sucessfully saved at ", save_path)
