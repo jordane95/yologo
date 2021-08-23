@@ -16,11 +16,15 @@ We use the pretrained model released by Baidu to complete the OCR function of ou
 
 PaddleOCR is a two-stage model. Regarding OCR as text detection and text recongntion, PaddleOCR firstly use a DB to do text detection, then use a CRNN to do text recogntion.
 
+![ocr](ocr_result.jpg)
+
 ### YOLO
 
 YOLO is a single-stage object detection model. It can detect the location and classify the object simultaneously.
 
 The logo/shape detection task is complished by training yolov5 on custom dataset. We trained the yolov5 model starting from the pretrained model for 100 epochs on a server with GPU for 2 hours. The best performing weights is saved at yolov5/weights/best.pt. The trained yolo model is called by torch.hub() fonction. We will use it to do shape detection in our system.
+
+![yolo](image0.jpg)
 
 ### Postprocessing
 
