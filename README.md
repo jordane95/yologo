@@ -43,7 +43,7 @@ Output text
 1. Run the docker container
 
    ```
-   docker pull jordane95/logo:alpha
+   docker pull jordane95/logo:latest
    docker run -dp 2333:7595 --name logo_server logo
    ```
 

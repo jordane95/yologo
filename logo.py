@@ -15,35 +15,34 @@ class TextEncoder:
         pass
     
     def _get_text_size(self, box, text_len):
-        print(box)
-        '''in the box, the height dim is index 1, width dim is index 0'''
-        height = (abs(box[0][1]-box[3][1]) + abs(box[1][1]-box[2][1]))/2
+        '''get the shape of single char in the horizontal text'''
         width = (abs(box[1][0]-box[0][0]) + abs(box[2][0]-box[3][0]))/(2*text_len)
+        height = (abs(box[0][1]-box[3][1]) + abs(box[1][1]-box[2][1]))/2
         return width, height
     
     def _get_box_area(self, box):
+        '''get the approximate total text area'''
         height = (abs(box[0][1]-box[3][1]) + abs(box[1][1]-box[2][1]))/2
         width = (abs(box[1][0]-box[0][0]) + abs(box[2][0]-box[3][0]))/2
         return width*height
 
-    def get_nearest_text(self, img, show=False):
-        '''get the nearest text w.r.t the center of the image'''
-        result = self.model.ocr(img)
-        for res in result: print(res)
-        if result == []: return None, None, None
-        img_center = [img.shape[0]/2, img.shape[1]/2]
-        boxes = [line[0] for line in result]
-        texts = [line[1][0] for line in result]
-        box_centers = [get_center_point(box) for box in boxes]
-        distances = [get_distance(box_center, img_center) for box_center in box_centers]
-        areas = [self._get_box_area(box) for box in boxes]
-        nearest_index = max(range(len(areas)), key=areas.__getitem__)
-        nearest_text = texts[nearest_index]
-        nearest_box = boxes[nearest_index]
-        text_shape = self._get_text_size(nearest_box, len(nearest_text))
+    def get_interest_text(self, img, debug=False):
+        '''get the text of interest in the image according to its distance w.r.t center of image and its area'''
+        result = self.model.ocr(img) # use paddleocr to get all texts in the image
+        if result == []: return None, None, None # when no text is detected, return a signal None
+        img_center = [img.shape[0]/2, img.shape[1]/2] # get center point of the image
+        boxes = [line[0] for line in result] # get each box of text, in form of four points
+        texts = [line[1][0] for line in result] # get all text content in form of string
+        box_centers = [get_center_point(box) for box in boxes] # get center of all boxes
+        distances = [get_distance(box_center, img_center) for box_center in box_centers] # for each box, get dis w.r.t img center
+        areas = [self._get_box_area(box) for box in boxes] # get area of each text box
+        # text importance dependent solely on text area
+        nearest_index = max(range(len(areas)), key=areas.__getitem__) # get most 'nearest' text index
+        nearest_text = texts[nearest_index] # get its string content
+        text_box = boxes[nearest_index] # get its box information
+        text_shape = self._get_text_size(text_box, len(nearest_text)) # get size of single char in the text
         print("nearest box center:", box_centers[nearest_index])
-        text_box = boxes[nearest_index]
-        if show:
+        if debug:
             from PIL import Image
             im_show = draw_ocr(img, boxes)
             im_show = Image.fromarray(im_show)
@@ -56,18 +55,20 @@ class ShapeEncoder:
         self.model = torch.hub.load('yolov5', 'custom', path=weight_path, source='local')
         pass
 
-    def get_relevant_shape(self, img, text_center=[359.75, 215.0]):
+    def get_relevant_shape(self, img, text_center=[359.75, 215.0], debug=True):
+        '''get relevant shapes w.r.t text of interest in the img'''
         result = self.model(img)
-        result.save()
-        if [*result.xywh[0].shape][0] == 0: return []
-        logo_box_centers = [res[:2] for res in result.xywh[0]] # center of each box
+        if debug: result.save() # save the result of logo/shape detection for debug
+        if [*result.xywh[0].shape][0] == 0: return [] # no shape is detected
+        logo_box_centers = [res[:2] for res in result.xywh[0]] # get center of each box
         distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers] # dis(shape center, text center)
         sizes = [res[2]+res[3] for res in result.xywh[0]] # size of each box
         confs = [res[5] for res in result.xywh[0]] # confidence of each box
         # nearest_index = min(range(len(distances)), key=distances.__getitem__)
+        # rank all shapes by its score
         scores = []
         for i in range(len(distances)):
-            score = sizes[i]*confs[i]/distances[i] # new metric for ranking
+            score = sizes[i]*confs[i]/distances[i] # new metric for shape ranking
             scores.append(score)
         nearest_index = max(range(len(scores)), key=scores.__getitem__)
         nearest_logo_box = result.xywh[0][nearest_index][:4]
@@ -92,7 +93,7 @@ class LogoEncoder:
         self.shape_encoder = ShapeEncoder()
 
     def encode_text(self, img, save_path='results/text.txt'):
-        text, _, __ = self.text_encoder.get_nearest_text(img)
+        text, _, __ = self.text_encoder.get_interest_text(img)
         if text == None: text = ""
         with open(save_path, 'w', encoding='utf-8') as f:
             f.write(text)
@@ -101,7 +102,7 @@ class LogoEncoder:
 
     def encode_logo(self, img, save_path='results/logo.txt'):
         '''get text info'''
-        text, text_shape, text_box = self.text_encoder.get_nearest_text(img, show=True)
+        text, text_shape, text_box = self.text_encoder.get_interest_text(img, debug=True)
         # bad case where no text is detected in the image
         if text == None: return ""
         # if text exist in the image, do the subsequent stuff
@@ -131,6 +132,7 @@ class LogoEncoder:
             Sx = math.floor((x1-x_min)/w)
             Sy = math.floor((y1-y_min)/h)
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
+            '''switch type condition'''
             if name == 'plus': draw_plus(ascii_mat, Sx, Sy, W, H)
             elif name == 'square': draw_square(ascii_mat, Sx, Sy, W, H)
             elif name == 'triangle': draw_triangle(ascii_mat, Sx, Sy, W, H)
@@ -165,7 +167,7 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/plus.jpg'
+    read_path = 'images/cross.jpg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)[:, :, ::-1]
