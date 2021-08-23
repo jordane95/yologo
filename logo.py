@@ -2,12 +2,16 @@ from paddleocr import PaddleOCR, draw_ocr
 import cv2 as cv
 import torch
 import math
+
 from functions import get_center_point, get_distance, xy_in_xywh, get_xyxy_from_box, get_bound_xyxy
+from shapes import draw_circle, draw_plus, draw_square, draw_triangle, draw_cross, \
+    draw_ellipse, draw_hexagon, draw_rhombus, draw_inv_triangle, draw_unk 
 
 
 class TextEncoder:
     """get the text encoding of the raw image"""
     def __init__(self) -> None:
+        self.model = PaddleOCR(lang='en')
         pass
     
     def _get_text_size(self, box, text_len):
@@ -24,8 +28,7 @@ class TextEncoder:
 
     def get_nearest_text(self, img, show=False):
         '''get the nearest text w.r.t the center of the image'''
-        ocr = PaddleOCR(lang='en')
-        result = ocr.ocr(img)
+        result = self.model.ocr(img)
         for res in result: print(res)
         if result == []: return None, None, None
         img_center = [img.shape[0]/2, img.shape[1]/2]
@@ -34,7 +37,7 @@ class TextEncoder:
         box_centers = [get_center_point(box) for box in boxes]
         distances = [get_distance(box_center, img_center) for box_center in box_centers]
         areas = [self._get_box_area(box) for box in boxes]
-        nearest_index = max(range(len(distances)), key=areas.__getitem__)
+        nearest_index = max(range(len(areas)), key=areas.__getitem__)
         nearest_text = texts[nearest_index]
         nearest_box = boxes[nearest_index]
         text_shape = self._get_text_size(nearest_box, len(nearest_text))
@@ -64,7 +67,7 @@ class ShapeEncoder:
         # nearest_index = min(range(len(distances)), key=distances.__getitem__)
         scores = []
         for i in range(len(distances)):
-            score = sizes[i]*confs[i]/distances[i]
+            score = sizes[i]*confs[i]/distances[i] # new metric for ranking
             scores.append(score)
         nearest_index = max(range(len(scores)), key=scores.__getitem__)
         nearest_logo_box = result.xywh[0][nearest_index][:4]
@@ -87,93 +90,6 @@ class LogoEncoder:
     def __init__(self) -> None:
         self.text_encoder = TextEncoder()
         self.shape_encoder = ShapeEncoder()
-    
-    def draw_plus(self, ascii_mat, Sx, Sy, W, H):
-        size = (W+H)//2
-        if size <= 2:
-            ascii_mat[Sy][Sx] = '+'
-        elif size <= 4:
-            ascii_mat[Sy][Sx+2] = "|"
-            ascii_mat[Sy+1][Sx:Sx+5] = ["-", "-", "+", "-", "-"]
-            ascii_mat[Sy+2][Sx+2] = "|"
-            pass
-        else: pass
-        pass
-
-    def draw_square(self, ascii_mat, Sx, Sy, W, H):
-        size = (W+H)//2
-        if size <= 2:
-            ascii_mat[Sy][Sx:Sx+3] = ['[', '_', ']']
-        else:
-            for i in range(W):
-                ascii_mat[Sy][i+Sx] = "-"
-                ascii_mat[Sy+H][i+Sx] = "-"
-            for j in range(H):
-                ascii_mat[Sy+j][Sx] = "|"
-                ascii_mat[Sy+j][Sx+W] = "|"
-        pass
-
-    def draw_triangle(self, ascii_mat, Sx, Sy, W, H):
-        size = (W+H)//2
-        if size <= 1:
-            ascii_mat[Sy][Sx] = "^"
-        elif size <=4:
-            for i in range(3):
-                ascii_mat[Sy+i][Sx+2-i] = "/"
-            for i in range(3):
-                ascii_mat[Sy+i][Sx+3+i] = "\\"
-            ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+4] = "_"
-        else:
-            pass
-        pass
-
-    def draw_circle(self, ascii_mat, Sx, Sy, W, H):
-        size = (W+H)//2
-        if size <= 2:
-            ascii_mat[Sy][Sx] = "O"
-        elif size <= 4:
-            ascii_mat[Sy][Sx+1] = ascii_mat[Sy][Sx+3] = 'o'
-            ascii_mat[Sy+1][Sx] = ascii_mat[Sy+1][Sx+4] = 'o'
-            ascii_mat[Sy+2][Sx+1] = ascii_mat[Sy+2][Sx+3] = 'o'
-        else:
-            center = [Sx+round(W/2), Sy+round(H/2)]
-            Sx = center[0]-5
-            Sy = center[1]-3
-            ascii_mat[Sy][Sx+4] = ascii_mat[Sy][Sx+7] = "="
-            ascii_mat[Sy+1][Sx+1] = ascii_mat[Sy+1][Sx+10] = "="
-            ascii_mat[Sy+2][Sx] = ascii_mat[Sy+2][Sx+11] = "="
-            ascii_mat[Sy+3][Sx] = ascii_mat[Sy+3][Sx+11] = "="
-            ascii_mat[Sy+4][Sx+1] = ascii_mat[Sy+4][Sx+10] = "="
-            ascii_mat[Sy+5][Sx+4] = ascii_mat[Sy+5][Sx+7] = "="
-        pass
-    
-    def draw_ellipse(self, ascii_mat, Sx, Sy, W, H):
-        pass
-
-    def draw_cross(self, ascii_mat, Sx, Sy, W, H):
-        size = (W+H)//2
-        if size <= 2:
-            ascii_mat[Sy][Sx] = "X"
-        elif size <= 4:
-            ascii_mat[Sy][Sx] = ascii_mat[Sy+1][Sx+1] = "\\"
-            ascii_mat[Sy][Sx+1] = ascii_mat[Sy+1][Sx] = "/"
-        else:
-            ascii_mat[Sy][Sx] = ascii_mat[Sy+2][Sx+2] = "\\"
-            ascii_mat[Sy][Sx+2] = ascii_mat[Sy+2][Sx] = "/"
-            ascii_mat[Sy+1][Sx+1] = "X"
-        pass
-
-    def draw_hexagon(self, ascii_mat, Sx, Sy, W, H):
-        pass
-
-    def draw_rhombus(self, ascii_mat, Sx, Sy, W, H):
-        pass
-
-    def draw_inv_triangle(self, ascii_mat, Sx, Sy, W, H):
-        pass
-
-    def draw_unk(self, ascii_mat, Sx, Sy, W, H):
-        pass
 
     def encode_text(self, img, save_path='results/text.txt'):
         text, _, __ = self.text_encoder.get_nearest_text(img)
@@ -215,25 +131,16 @@ class LogoEncoder:
             Sx = math.floor((x1-x_min)/w)
             Sy = math.floor((y1-y_min)/h)
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
-            if name == 'plus':
-                self.draw_plus(ascii_mat, Sx, Sy, W, H)
-            elif name == 'square':
-                self.draw_square(ascii_mat, Sx, Sy, W, H)
-            elif name == 'triangle':
-                self.draw_triangle(ascii_mat, Sx, Sy, W, H)
-            elif name == "circle":
-                self.draw_circle(ascii_mat, Sx, Sy, W, H)
-            elif name == "cross":
-                self.draw_cross(ascii_mat, Sx, Sy, W, H)
-            elif name == "ellipse":
-                self.draw_cross(ascii_mat, Sx, Sy, W, H)
-            elif name == "rhombus":
-                self.draw_cross(ascii_mat, Sx, Sy, W, H)
-            elif name == "inverse triangle":
-                self.draw_cross(ascii_mat, Sx, Sy, W, H)
-            elif name == "hexagon":
-                self.draw_cross(ascii_mat, Sx, Sy, W, H)
-            elif name == "unk": pass
+            if name == 'plus': draw_plus(ascii_mat, Sx, Sy, W, H)
+            elif name == 'square': draw_square(ascii_mat, Sx, Sy, W, H)
+            elif name == 'triangle': draw_triangle(ascii_mat, Sx, Sy, W, H)
+            elif name == "circle": draw_circle(ascii_mat, Sx, Sy, W, H)
+            elif name == "cross": draw_cross(ascii_mat, Sx, Sy, W, H)
+            elif name == "ellipse": draw_ellipse(ascii_mat, Sx, Sy, W, H)
+            elif name == "rhombus": draw_rhombus(ascii_mat, Sx, Sy, W, H)
+            elif name == "inverse triangle": draw_inv_triangle(ascii_mat, Sx, Sy, W, H)
+            elif name == "hexagon": draw_hexagon(ascii_mat, Sx, Sy, W, H)
+            elif name == "unk": draw_unk(ascii_mat, Sx, Sy, W, H)
             else: pass
 
         
