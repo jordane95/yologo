@@ -99,6 +99,12 @@ def draw_hexagon(ascii_mat, Sx, Sy, W, H):
     pass
 
 def draw_rhombus(ascii_mat, Sx, Sy, W, H):
+    size = (W+H)//2
+    if size <= 2: ascii_mat[Sy][Sx:Sx+1] = ["<", ">"]
+    elif size <= 4:
+        ascii_mat[Sy][Sx] = ascii_mat[Sy+1][Sx+1] = "/"
+        ascii_mat[Sy][Sx+1] = ascii_mat[Sy+1][Sx] = "\\"
+    else: pass
     pass
 
 def draw_inv_triangle(ascii_mat, Sx, Sy, W, H):

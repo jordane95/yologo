@@ -73,10 +73,8 @@ class ShapeEncoder:
         nearest_index = max(range(len(scores)), key=scores.__getitem__)
         nearest_logo_box = result.xywh[0][nearest_index][:4]
         '''get relevant logo indexs'''
-        relevant_logo_ids = []
-        for id in range(len(logo_box_centers)):
-            if xy_in_xywh(logo_box_centers[id], nearest_logo_box):
-                relevant_logo_ids.append(id)
+        # if a logo box center fall in the most relevant logo box, we treat it also as relevant logo
+        relevant_logo_ids = [id for id in range(len(logo_box_centers)) if xy_in_xywh(logo_box_centers[id], nearest_logo_box)]
         '''get relevant logo infos via ids'''
         relevant_logos = []
         for logo_id in relevant_logo_ids:
@@ -93,10 +91,9 @@ class LogoEncoder:
         self.shape_encoder = ShapeEncoder()
 
     def encode_text(self, img, save_path='results/text.txt'):
-        text, _, __ = self.text_encoder.get_interest_text(img)
-        if text == None: text = ""
-        with open(save_path, 'w', encoding='utf-8') as f:
-            f.write(text)
+        text, _, __ = self.text_encoder.get_interest_text(img) # use text encoder to get most important text
+        if text == None: text = "" # if no text is detected, return null string
+        with open(save_path, 'w', encoding='utf-8') as f: f.write(text)
         print(f'The encoding file saved sucessfully at {save_path} !')
         return text
 
@@ -108,14 +105,17 @@ class LogoEncoder:
         # if text exist in the image, do the subsequent stuff
         '''get shape info'''
         relevant_shapes = self.shape_encoder.get_relevant_shape(img, text_center=get_center_point(text_box))
-        w, h = text_shape
+        w, h = text_shape # size of each grid
         '''get bounding box of all boxes'''
-        x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box])
+        x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box]) # get the bounding box of text box
+        # get bouding box of all relevant shapes
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
+        # get bouding box of both relevant shapes and text, extend by 2 on both direction
         x_min = min(x_min_t, x_min_s)-2*w
         y_min = min(y_min_t, y_min_s)-2*h
         x_max = max(x_max_t, x_max_s)+2*w
         y_max = max(y_max_t, y_max_s)+2*h
+        # calculate the number of grids in x, y dimension of the final ascii result
         Nx = math.ceil((x_max-x_min)/w)+1
         Ny = math.ceil((y_max-y_min)/h)+1
         print(f"Nx: {Nx}, Ny:{Ny}")
@@ -123,16 +123,16 @@ class LogoEncoder:
 
         ## note: shape rander first, then text
         
-        '''draw shape'''
+        '''draw shape in ascii_mat'''
         for shape in relevant_shapes:
-            x1, y1, x2, y2 = shape['xyxy']
-            name = shape['name']
-            W = math.floor((x2-x1)/w)
-            H = math.floor((y2-y1)/h)
-            Sx = math.floor((x1-x_min)/w)
-            Sy = math.floor((y1-y_min)/h)
+            x1, y1, x2, y2 = shape['xyxy'] # get shape box
+            name = shape['name'] # get shape name
+            W = math.floor((x2-x1)/w) # get shape size in x-dim, in terms of grid number
+            H = math.floor((y2-y1)/h) # same as W but in y-dim
+            Sx = math.floor((x1-x_min)/w) # get the staring coordinate of grid in x-dim
+            Sy = math.floor((y1-y_min)/h) # same as Sx yet in y-dim
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
-            '''switch type condition'''
+            '''switch-style conditional shape choice'''
             if name == 'plus': draw_plus(ascii_mat, Sx, Sy, W, H)
             elif name == 'square': draw_square(ascii_mat, Sx, Sy, W, H)
             elif name == 'triangle': draw_triangle(ascii_mat, Sx, Sy, W, H)
@@ -147,27 +147,25 @@ class LogoEncoder:
 
         
         '''draw text in ascii_mat'''
-        ## only support text in one line
-        Tx = math.ceil((x_min_t-x_min)/w)
-        Ty = math.ceil(((y_max_t+y_min_t)/2-y_min)/h)
+        # only support horizontal text in one line
+        Tx = math.ceil((x_min_t-x_min)/w) # get staring cooridinate in x-dim
+        Ty = math.ceil(((y_max_t+y_min_t)/2-y_min)/h) # same but in y-dim
         print(f"Text starting point: Tx:{Tx}, Ty:{Ty}")
         ascii_mat[Ty][Tx:(Tx+len(text))] = list(text)
         
 
-        '''flatten two dimensional ascii array'''
+        '''flatten two dimensional ascii array to a string'''
         res = ""
         for line in ascii_mat:
-            for c in line:
-                res += c
+            for c in line: res += c
             res += "\n"
-        with open(save_path, 'w', encoding='utf-8') as f:
-            f.write(res)
+        with open(save_path, 'w', encoding='utf-8') as f: f.write(res)
         print("Logo ASCII Art sucessfully saved at ", save_path)
         return res
 
 
 if __name__ == "__main__":
-    read_path = 'images/cross.jpg'
+    read_path = 'images/plus.jpeg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)[:, :, ::-1]

@@ -32,12 +32,19 @@ The core code is implemented in logo.py. Some auxiliary functions and methods ar
 
 ### logo.py
 
+Three classes are implemented in this file.
+
 * TextEncoder
+
+  call PaddleOCR to do text detection, and get the most import text in the image, according to the text area and its distance with respect to the image center
+
   * 
 
 * ShapeEncoder
+  * 
 
 * LogoEncoder
+  * 
 
 ### app.py
 
@@ -91,5 +98,7 @@ Firstly, open the doceker container in the command line via
 docker exec -it logo_server /bin/sh
 ```
 
-Note that the ocr result produced by PaddleOCR is save at images/ocr_result.jpg, and the logo detection result given by YOLOv5 is saved at runs/hub/exp#/image0.jpg, where # is a number representing how many times you have called the model.
+Note that the ocr result produced by PaddleOCR is save at images/ocr_result.jpg
+
+the logo detection result given by YOLOv5 is saved at runs/hub/exp#/image0.jpg, where # is a number representing how many times you have called the model.
 
