@@ -2,6 +2,8 @@
 
 This file is the documentation for the system.
 
+[TOC]
+
 ## Introduction
 
 The system can be divided to 3 modules:
@@ -53,25 +55,48 @@ The core code is implemented in logo.py. Some auxiliary functions and methods ar
 
 Three classes are implemented in this file.
 
+```python
+class TextEncoder:
+  def get_interest_text(self, img, debug=False):
+    # ...
+    return text, text_shape, text_box
+
+class ShapeEncoder:
+  def get_relevant_shape(self, img, text_center, debug=True):
+    # ...
+    return relevant_shapes
+  
+class LogoEncoder:
+  def encode_text(self, img, save_path):
+    # ...
+    return text
+  
+  def encode_logo(self, img, save_path):
+    # ...
+    return res
+```
+
 * TextEncoder
   1. call PaddleOCR to do text detection
   2. get the most import text in the image, according to the text area and its distance with respect to the image center
-  3. implemented as the method **get_interest_text()** 
+  3. provide API **get_interest_text()** return the text information, including its content, box and text size
 
 * ShapeEncoder
   1. call YOLO model to perform logo/shape detection in the image
   2. according to the text location (text center) given by TextEncoder, determine the most relevant logo(s) with repect to the most important text given by TextEncoder, the algorithm select the shape with the most score which is defined as the multiplication of area, confidance and inverse distance, and include all shapes within it
-  3. implemented as the method **get_relevant_shape()**
+  3. provide API **get_relevant_shape()** return the relevant shapes
 
 * LogoEncoder
   1. call TextEncoder to get the most important text, then call ShapeEncoder to find the most relevant logo/shape of it
   2. Based on the bouding box of text and logo(shape), rasterize the corresponding image region according to the size of single character in the text (i.e., the pixels of each dimension it occupies)
   3. Render the region, which is now represented by a two-dimensional array of characters, with rule-based shape ASCII encoding, and the text
-  4. implemented as the method **encode_text()** which only return the text, and **encode_logo()** which return both text and shape
+  4. provide two APIs: **encode_text()** which only return the text, and **encode_logo()** which return both text and shape
 
 ### app.py
 
-The GET method and POST method is allowed. Each time it recevies a byte stream, it trys to convert it to a RGB image. Then call the model (LogoEncoder) to extract the ASCII encoding of the RGB image, and send it to user.
+The GET method and POST method is allowed. 
+
+Each time it recevies a image byte stream, it trys to convert it to a RGB image. Then call the model (LogoEncoder) to extract the ASCII encoding of the RGB image, and send it to user.
 
 ### functions.py
 
@@ -79,7 +104,7 @@ some auxiliary functions used by logo.py
 
 ### shapes.py
 
-functions to draw shape in the two-dimensional array of ASCII char
+functions to draw shape in the two-dimensional array of ASCII char, used by logo.py
 
 ## Deployment
 
@@ -111,7 +136,7 @@ You can use docker to deploy the web service.
     /_  _\            
    ```
 
-## Debug
+## Debugging
 
 During runing or testing, if the system doesn't perform well on some images and you want to figure out why, you can check the intermediate results saved in the docker container.
 
@@ -142,4 +167,6 @@ There are serveral improvements that can be made to improve the performance of t
   * distinguish the case when the text is outside the logo or inside it and design different drawing strategy for the shape to alleviate the coverage problem
 
 * design more beautiful predefined shapes with ASCII char
+
+* handle the unk logo with automatic ASCII art generation
 

@@ -132,7 +132,7 @@ class LogoEncoder:
             Sx = math.floor((x1-x_min)/w) # get the staring coordinate of grid in x-dim
             Sy = math.floor((y1-y_min)/h) # same as Sx yet in y-dim
             print(f"For shape {name}, Sx:{Sx}, Sy:{Sy}, W:{W}, H:{H}")
-            '''switch-style conditional shape choice'''
+            '''switch-like conditional shape choice'''
             if name == 'plus': draw_plus(ascii_mat, Sx, Sy, W, H)
             elif name == 'square': draw_square(ascii_mat, Sx, Sy, W, H)
             elif name == 'triangle': draw_triangle(ascii_mat, Sx, Sy, W, H)
@@ -165,7 +165,7 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/plus.jpeg'
+    read_path = 'images/nuh.jpg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)[:, :, ::-1]

@@ -22,8 +22,10 @@ def predict():
         image_bytes = image_file.read()
 
         img = Image.open(io.BytesIO(image_bytes))
+        # for BGRA image, deprecate the alpha channel
+        img_array = np.asarray(img)[:, :, :3]
         encoder = LogoEncoder()
-        results = encoder.encode_logo(np.asarray(img))
+        results = encoder.encode_logo(img_array)
         return results
 
 
