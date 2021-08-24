@@ -9,7 +9,7 @@ from shapes import draw_circle, draw_plus, draw_square, draw_triangle, draw_cros
 
 
 class TextEncoder:
-    """get the text encoding of the raw image"""
+    """get the text in the image"""
     def __init__(self) -> None:
         self.model = PaddleOCR(lang='en')
         pass
@@ -42,7 +42,7 @@ class TextEncoder:
         text_box = boxes[nearest_index] # get its box information
         text_shape = self._get_text_size(text_box, len(nearest_text)) # get size of single char in the text
         print("nearest box center:", box_centers[nearest_index])
-        if debug:
+        if debug: # save ocr result
             from PIL import Image
             im_show = draw_ocr(img, boxes)
             im_show = Image.fromarray(im_show)
@@ -110,7 +110,7 @@ class LogoEncoder:
         x_min_t, y_min_t, x_max_t, y_max_t = get_xyxy_from_box([text_box]) # get the bounding box of text box
         # get bouding box of all relevant shapes
         x_min_s, y_min_s, x_max_s, y_max_s = get_bound_xyxy([shape['xyxy'] for shape in relevant_shapes])
-        # get bouding box of both relevant shapes and text, extend by 2 on both direction
+        # get bouding box of both relevant shapes and text, extend by 2 on every direction
         x_min = min(x_min_t, x_min_s)-2*w
         y_min = min(y_min_t, y_min_s)-2*h
         x_max = max(x_max_t, x_max_s)+2*w
