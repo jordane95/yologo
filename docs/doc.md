@@ -94,7 +94,7 @@ class LogoEncoder:
 
 ### app.py
 
-The GET method and POST method is allowed. 
+The GET method and POST method is allowed.
 
 Each time it recevies a image byte stream, it trys to convert it to a RGB image. Then call the model (LogoEncoder) to extract the ASCII encoding of the RGB image, and send it to user.
 

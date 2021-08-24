@@ -15,7 +15,7 @@ app = Flask(__name__)
 @app.route("/", methods=["GET", "POST"])
 def predict():
     if not request.method == "POST":
-        return "Hello, world"
+        return "Usage: curl -X POST -F image=@path/to/image 'http://localhost:2333'"
 
     if request.files.get("image"):
         image_file = request.files["image"]
