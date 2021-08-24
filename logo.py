@@ -63,7 +63,7 @@ class ShapeEncoder:
         logo_box_centers = [res[:2] for res in result.xywh[0]] # get center of each box
         distances = [get_distance(text_center, logo_center) for logo_center in logo_box_centers] # dis(shape center, text center)
         sizes = [res[2]+res[3] for res in result.xywh[0]] # size of each box
-        confs = [res[5] for res in result.xywh[0]] # confidence of each box
+        confs = [res[4] for res in result.xywh[0]] # confidence of each box
         # nearest_index = min(range(len(distances)), key=distances.__getitem__)
         # rank all shapes by its score
         scores = []
@@ -165,7 +165,7 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/nuh.jpg'
+    read_path = 'images/plus.jpeg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)[:, :, ::-1]
