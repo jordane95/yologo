@@ -6,31 +6,31 @@ This file is the documentation for the system.
 
 ## Introduction
 
-The system can be divided to 3 modules:
+The system can be roughly divided into 3 modules:
 
-1. PaddleOCR: which aims to detect all the texts in the image
+1. PaddleOCR: aims to detect all the texts in the image
 2. YOLO: aims to detect all the logos as well as its shape in the image
-3. Postprocessing: using the preceding results to get the ASCII encoding of the image.
+3. Postprocessing: using the preceding results to get the ASCII encoding of the image
 
 ### PaddleOCR
 
-We use the pretrained model released by Baidu to complete the OCR function of our system.
+We use the pretrained PaddleOCR model released by Baidu to complete the OCR function of our system.
 
-PaddleOCR is a two-stage model. Regarding OCR as text detection and text recongntion, PaddleOCR firstly use a DB to do text detection, then use a CRNN to do text recogntion.
+PaddleOCR is a *two-stage* model. Regarding OCR as text detection and text recongntion, PaddleOCR firstly use a DB to do text detection, then use a CRNN to do text recogntion.
 
 ![ocr](ocr_result.jpg)
 
 ### YOLO
 
-YOLO is a single-stage object detection model. It can detect the location and classify the object simultaneously.
+YOLO is a *single-stage* object detection model. It's widely used because of its high speed and accuracy. It can locate the object and classify it simultaneously.
 
-The logo/shape detection task is complished by training yolov5 on custom dataset. We trained the yolov5 model starting from the pretrained model for 100 epochs on a server with GPU for 2 hours. The best performing weights is saved at yolov5/weights/best.pt. The trained yolo model is called by torch.hub() fonction. We will use it to do shape detection in our system.
+The logo/shape detection task is complished by training yolov5 on custom dataset. We trained the yolov5 model starting from the pretrained model for 100 epochs on a server with GPU for 2 hours. The best weights is saved at yolov5/weights/best.pt. The trained yolo model is called by torch.hub() fonction. We will use it to do shape detection in our system.
 
 ![yolo](image0.jpg)
 
 ### Postprocessing
 
-This module consists of post process the text detection and shape detection in the previous two modules. It can convert the text and shape to the corresponding ASCII characters, while preserving their relative location.
+This module consists of post process the results of text detection and shape detection in the previous two modules. It can extract the most important text and logo in the image, convert them to the corresponding ASCII characters, while preserving their relative location.
 
 ```
                   
@@ -42,39 +42,21 @@ This module consists of post process the text detection and shape detection in t
                   
                   
                   
-
 ```
 
-
-
 ## Architecture
+
+The overall architecture is illusted as follows
+
+![diagram](logo-diagram.png)
+
+The docker container provides a web service, and user can POST image to it and get the ASCII response from it.
 
 The core code is implemented in logo.py. Some auxiliary functions and methods are implemented in functions.py and shapes.py. The web service code is implemented in app.py.
 
 ### logo.py
 
 Three classes are implemented in this file.
-
-```python
-class TextEncoder:
-  def get_interest_text(self, img, debug=False):
-    # ...
-    return text, text_shape, text_box
-
-class ShapeEncoder:
-  def get_relevant_shape(self, img, text_center, debug=True):
-    # ...
-    return relevant_shapes
-  
-class LogoEncoder:
-  def encode_text(self, img, save_path):
-    # ...
-    return text
-  
-  def encode_logo(self, img, save_path):
-    # ...
-    return res
-```
 
 * TextEncoder
   1. call PaddleOCR to do text detection
@@ -94,9 +76,9 @@ class LogoEncoder:
 
 ### app.py
 
-The GET method and POST method is allowed.
+Wrap the **LogoEncoder** as a web service. The GET method and POST method is allowed in this file.
 
-Each time it recevies a image byte stream, it trys to convert it to a RGB image. Then call the model (LogoEncoder) to extract the ASCII encoding of the RGB image, and send it to user.
+Each time it recevies a image byte stream, it trys to convert it to a RGB image. Then call the model (LogoEncoder) to get the ASCII encoding of the RGB image, and send it to user.
 
 ### functions.py
 
