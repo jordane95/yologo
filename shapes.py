@@ -28,12 +28,12 @@ def draw_plus(ascii_mat, Sx, Sy, W, H):
 def draw_square(ascii_mat, Sx, Sy, W, H):
     size = (W+H)//2
     if size <= 2:
-        ascii_mat[Sy][Sx:Sx+3] = ['[', '_', ']']
+        ascii_mat[Sy][Sx:Sx+2] = ['[', ']']
     else:
-        for i in range(W):
+        for i in range(W+1):
             ascii_mat[Sy][i+Sx] = "-"
             ascii_mat[Sy+H][i+Sx] = "-"
-        for j in range(H):
+        for j in range(H+1):
             ascii_mat[Sy+j][Sx] = "|"
             ascii_mat[Sy+j][Sx+W] = "|"
     pass
@@ -73,6 +73,7 @@ def draw_circle(ascii_mat, Sx, Sy, W, H):
     pass
 
 def draw_ellipse(ascii_mat, Sx, Sy, W, H):
+    draw_circle(ascii_mat, Sx, Sy, W, H)
     pass
 
 def draw_cross(ascii_mat, Sx, Sy, W, H):
