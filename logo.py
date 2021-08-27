@@ -165,7 +165,7 @@ class LogoEncoder:
 
 
 if __name__ == "__main__":
-    read_path = 'images/plus.jpeg'
+    read_path = 'images/square.jpeg'
     save_path = 'results/test_logo.txt'
     save_text = 'results/test_text.txt'
     img = cv.imread(read_path)[:, :, ::-1]

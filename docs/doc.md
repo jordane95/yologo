@@ -133,8 +133,17 @@ You can then lookup the intermediate results in the directory.
 Note that 
 
 * the ocr result produced by PaddleOCR is save at images/ocr_result.jpg
-
 * the logo detection result given by YOLOv5 is saved at runs/hub/exp#/image0.jpg, where # is a number representing how many times you have called the model
+
+### Rebuild
+
+In case you modified the code and want to rebuild the docker image, using
+
+```
+docker build -t jordane95/logo:latest .
+```
+
+to rebuild the image.
 
 ## Future work
 

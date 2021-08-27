@@ -53,6 +53,8 @@ Output text
    curl -X POST -F image=@your_image.jpg 'http://localhost:2333'
    ```
 
+Note: only support .jpg .jpeg images
+
 ## Structure
 
 ```
