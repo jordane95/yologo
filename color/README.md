@@ -38,17 +38,17 @@ extension of box_theme_color, provide theme color extraction API for YOLO box
 
 As always, we use the following image as example to illustrate the functionality of our system
 
-![input](file:///Users/user/jordane/gitlab/logo/images/input.jpg?lastModify=1630293486)
+![input](../images/input.jpg)
 
 ### Text Theme Color
 
 The PaddleOCR recognizes the text region, and we use API in ocr_theme_color.py to extract the corresponding theme color
 
-![ocr](file:///Users/user/jordane/gitlab/logo/color/ocr_result.jpg?lastModify=1630293486)
+![ocr](ocr_result.jpg)
 
 which yields
 
-![ocr_theme_color](file:///Users/user/jordane/gitlab/logo/color/ocr_theme_color.jpg?lastModify=1630293486)
+![ocr_theme_color](ocr_theme_color.jpg)
 
 
 
@@ -56,11 +56,11 @@ which yields
 
 The yolo model detects the logo region, 
 
-![logo](file:///Users/user/jordane/gitlab/logo/color/logo_det.jpg?lastModify=1630293486)
+![logo](logo_det.jpg)
 
 Using API in logo_theme_color.py, we can extract its theme colors
 
-![logo_theme_color](file:///Users/user/jordane/gitlab/logo/color/logo_theme_color.jpg?lastModify=1630293486)
+![logo_theme_color](logo_theme_color.jpg)
 
 Then, we can try to design matching algorithm to compute their similarity, which provides a ranking metric for relevant logo selection.
 
