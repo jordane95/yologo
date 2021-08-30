@@ -23,6 +23,7 @@ Output text
 * paddleocr
 * opencv
 * pytorch
+* sklearn
 * flask
 
 ## Usage
@@ -59,6 +60,12 @@ Note: only support .jpg .jpeg images
 
 ```
 logo
+├── color                                   // code for theme color extraction
+│   ├── box_theme_color.py                  // theme color extraction
+│   ├── ocr_theme_color.py                  // theme color extraction for PaddleOCR box
+│   ├── logo_theme_color.py                 // theme color extraction for YOLO box
+│   ├── README.md                           // doc for theme color extraction
+│   ...
 ├── images                                  // input images
 │   ├── input.jpg
 │   ...
@@ -71,7 +78,7 @@ logo
 │   ...
 ├── yolov5                                  // customized yolov5 model
 │   ├── weights                             // pre-trained weights
-│   │   └── best.pt                         // pre-trained weights on logo dataset for logo detection    
+│   │   └── logo.pt                         // pre-trained weights on logo dataset for logo detection    
 │   ...
 ├── Dockerfile                              // build docker image
 ├── functions.py                            // some useful functions used in logo.py
